@@ -1,1 +1,113 @@
+2. Create tables on top of files for Sales
+
+# 1- categories
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/sales/categories.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.sales.categories")
+
+# 2- customers
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/sales/customers.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.sales.customers")
+
+# 3- products
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/sales/products.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.sales.products")
+
+# 4- sales_transactions
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/sales/sales_transactions.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.sales.sales_transactions")
+
+# 5- stores.csv
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/sales/stores.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.sales.stores")
+----------------------------------------------------------------------------------
+3. Create tables on top of files for Marketing
+# 1- campaigns
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/marketing/campaigns.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.marketing.campaigns")
+
+# 2- customer_campaign_map
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/marketing/customer_campaign_map.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.marketing.customer_campaign_map")
+
+# 3- customer_segments
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/marketing/customer_segments.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.marketing.customer_segments")
+
+# 4- promotions
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/marketing/promotions.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.marketing.promotions")
+--------------------------------------------------------------------------
+4. Create tables on top of files for Web_api
+# 1- carts
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/web_api/carts.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.web_api.carts")
+
+# 2- products
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/web_api/products.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.web_api.products")
+
+# 3- users
+df = spark.read.format("csv") \
+    .option("header", "true") \
+    .load("abfss://bronze@unitycatalogstorages.dfs.core.windows.net/web_api/users.csv/")
+
+df.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("bronze_catalog.web_api.users")
+================================================================================================
 
