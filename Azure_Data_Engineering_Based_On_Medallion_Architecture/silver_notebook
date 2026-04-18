@@ -1,0 +1,397 @@
+Bronze → Silver (Modify Code)
+%sql
+CREATE CATALOG silver_catalog;
+
+CREATE SCHEMA silver_catalog.sales;
+CREATE SCHEMA silver_catalog.marketing;
+CREATE SCHEMA silver_catalog.web_api;
+--------------------------------------------------------------------------------------------------
+1. Sales data
+    1. customers
+    2. sales_transactions
+    3. categories
+    4. stores
+    5. products
+--------------------------------------------------------------------------------------------    
+                                                                1. customers table
+from pyspark.sql.functions import concat_ws
+from pyspark.sql.functions import col, when
+
+# 1. Read customers data
+df_customers = spark.table("bronze_catalog.sales.customers")
+
+# 2. drop middle_name column
+df_customers = df_customers.drop('middle_name')
+
+
+# 3. combile first_name and last_name in one column
+df_customers = df_customers.withColumn("full_name", concat_ws(" ", col("first_name"), col("last_name")))
+
+# 4. add age group
+df_customers = df_customers.withColumn("age_group",
+    when(col("age") < 25, "Youth")
+    .when(col("age") < 50, "Adult")
+    .otherwise("Senior"))
+
+# 5. Correct the Data types
+df_customers = df_customers.select(
+    col("customer_id").cast("int"),
+    col("first_name").cast("string"),
+    col("last_name").cast("string"),
+    col("gender").cast("string"),
+    col("age").cast("int"),
+    col("city").cast("string"),
+    col("state").cast("string"),
+    col("signup_date").cast("date"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date"),
+    col("full_name").cast("string"),
+    col("age_group").cast("string")
+)
+display(df_customers)
+df_customers.printSchema()
+
+# 6. Write to silver layer
+df_customers.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.sales.customers")
+--------------------------------------------------------------------------------------------------
+                                                2. sales_transactions table
+from pyspark.sql.functions import col, year, month
+
+# 1. Read sales_transactions data
+df_sales_transactions = spark.table("bronze_catalog.sales.sales_transactions")
+
+
+# 2. finding total amount
+df_sales_transactions = df_sales_transactions.withColumn("total_amount",
+                              col("quantity") * col("unit_price") - col("discount")) \
+                   .withColumn("profit", col("total_amount") * 0.2) \
+                   .withColumn("year", year("transaction_date")) \
+                   .withColumn("month", month("transaction_date"))
+                   
+display(df_sales_transactions)
+df_sales_transactions.printSchema()
+
+# 3. Correct the Data types
+df_sales_transactions = df_sales_transactions.select(
+    col("transaction_id").cast("int"),
+    col("customer_id").cast("int"),
+    col("product_id").cast("int"),
+    col("store_id").cast("int"),
+    col("quantity").cast("int"),
+    col("unit_price").cast("double"),
+    col("discount").cast("double"),
+    col("transaction_date").cast("date"),
+    col("payment_method").cast("string"),
+    col("last_updated").cast("date"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date"),
+    col("total_amount").cast("double "),
+    col("profit").cast("double "),
+    col("year").cast("int"),
+    col("month").cast("int")
+)
+
+
+# 4. Write to silver layer
+df_sales_transactions.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.sales.sales_transactions")
+-----------------------------------------------------------------------------------------------
+                                                            3. categories table
+from pyspark.sql.functions import col
+
+# 1. Read the categories table
+df_categories = spark.table("bronze_catalog.sales.categories")
+
+# 2. Drop duplicates and convert column names to lowercase
+df_categories = df_categories.toDF(*[c.lower() for c in df_categories.columns]).dropDuplicates()
+
+# 3.Correct the Data types
+df_categories = df_categories.select(
+    col("category_id").cast("int"),
+    col("category_name").cast("string"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date")
+)
+
+# 4. Write to Silver TABLE
+df_categories.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.sales.categories")
+----------------------------------------------------------------------------------------------
+                                                          4. stores table
+from pyspark.sql.functions import col
+
+# 2- stores
+# 1. Read categories table
+df_stores = spark.table("bronze_catalog.sales.stores")
+
+# 2. Correct the Data types
+df_stores = df_stores.select(
+    col("store_id").cast("int"),
+    col("store_name").cast("string"),
+    col("city").cast("string"),
+    col("state").cast("string"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date")
+)
+
+# 3. Write to Silver TABLE
+df_stores.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.sales.stores")
+-----------------------------------------------------------------------------------
+                                              5. products table
+from pyspark.sql.functions import col
+
+# 1. Read products data
+df_products = spark.table("bronze_catalog.sales.products")
+
+
+# 2. Correct the Data types
+df_products = df_products.select(
+    col("product_id").cast("int"),
+    col("product_name").cast("string"),
+    col("category_id").cast("int"),
+    col("brand").cast("string"),
+    col("price").cast("double"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date")
+)
+
+
+# 6. Write to silver layer
+df_products.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.sales.products")
+=========================================================================
+  2. marketing data
+  1. campaigns
+  2. promotions
+  3. customer_campaign_map
+  4. customer_segments
+-------------------------------------------------------------------------
+                                                        1. campaigns table
+from pyspark.sql.functions import col, datediff
+
+# 1. Read campaigns data
+df_campaigns = spark.table("bronze_catalog.marketing.campaigns")
+
+# 2. find campaign duration
+df_campaigns = df_campaigns.withColumn("campaign_duration",
+                                       datediff("end_date", "start_date"))
+
+
+# 3. Correct the Data types
+df_products = df_products.select(
+    col("campaign_id").cast("int"),
+    col("campaign_name").cast("string"),
+    col("start_date").cast("date"),
+    col("end_date").cast("date"),
+    col("budget").cast("double"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date"),
+    col("campaign_duration").cast("date")
+)
+
+
+# 6. Write to silver layer
+df_products.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.marketing.campaigns")
+----------------------------------------------------------------------
+                                                          2. promotions table
+from pyspark.sql.functions import col, datediff, when, current_date
+
+# 1. Read promotions data
+df_promotions = spark.table("bronze_catalog.marketing.promotions")
+
+# 2. Find data where discount percentage  > 9
+df_promotions = df_promotions.filter(col("discount_percentage") >= 9)
+display(df_promotions)
+df_promotions.printSchema()
+
+# 3. Correct the Data types
+df_products = df_products.select(
+    col("promotion_id").cast("int"),
+    col("product_id").cast("int"),
+    col("campaign_id").cast("int"),
+    col("discount_percentage").cast("double"),
+    col("start_date").cast("date"),
+    col("end_date").cast("date"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date")
+)
+
+
+# 6. Write to silver layer
+df_products.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.marketing.promotions")
+----------------------------------------------------------------
+                                                3. customer_campaign_map table
+from pyspark.sql.functions import col
+
+# 1. Read customer_campaign_map data
+df_customer_campaign_map = spark.table("bronze_catalog.marketing.customer_campaign_map")
+
+
+# 2. Correct the Data types
+df_customer_campaign_map = df_customer_campaign_map.select(
+    col("customer_id").cast("int"),
+    col("campaign_id").cast("string"),
+    col("segment_id").cast("date"),
+    col("response").cast("date"),
+    col("response_date").cast("double"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date")
+)
+
+
+# 6. Write to silver layer
+df_customer_campaign_map.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.marketing.customer_campaign_map")
+----------------------------------------------------------------------------
+                                                    4. customer_segment table
+# 1. Read customer_segments data
+df_customer_segments = spark.table("bronze_catalog.marketing.customer_segments")
+
+
+# 2. Correct the Data types
+df_customer_segments = df_customer_segments.select(
+    col("segment_id").cast("int"),
+    col("segment_name").cast("string"),
+    col("inserted_date").cast("date"),
+    col("lastmodified_date").cast("date")
+)
+
+
+# 3. Write to silver layer
+df_customer_segments.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.marketing.customer_segments")
+======================================================================
+3. web_api data
+  1. carts
+  2. products
+  3. users
+-------------------------------------------------------------------------
+                                                  1. carts table
+from pyspark.sql.functions import round
+# 1. Read df_carts data
+df_carts = spark.table("bronze_catalog.web_api.carts")
+
+# 2. correct column names
+df_header = df_carts.selectExpr(
+    "carts_id as carts_id",
+    "carts_total as carts_total",
+    "discounted_total as discounted_amount",
+    "userId as customer_id",
+    "totalProducts as total_products",
+    "totalQuantity as total_quantity"
+)
+
+# 3. find avg_price_per_item 
+df_discount = df_header.withColumn("avg_price_per_item", round(col("discounted_amount") / col("total_quantity"), 2))
+
+# 4. Correct the Data types
+df_carts = df_discount.select(
+    col("carts_id").cast("int"),
+    col("carts_total").cast("double"),
+    col("discounted_amount").cast("double"),
+    col("customer_id").cast("int"),
+    col("total_products").cast("int"),
+    col("total_quantity").cast("int"),
+    col("avg_price_per_item").cast("double")
+)
+
+# 5. Write to silver layer
+df_carts.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.web_api.carts")
+----------------------------------------------------------------
+                                            2. products table
+from pyspark.sql.functions import when, col
+# 1. Read products data
+df_products = spark.table("bronze_catalog.web_api.products")
+
+
+# 2. correct column names
+df_products = df_products.selectExpr(
+    "id as product_id",
+    "title as product_name",
+    "category",
+    "price",
+    "discountPercentage as discount_percentage",
+    "products_rating",
+    "stock",
+    "brand"
+)
+
+# 3. add 100 in product_id column
+df_products = df_products.withColumn("product_id", col("product_id") + 100)
+
+
+# 4. Replace null with unknown in brand column
+display(df_products.withColumn("brand", when(col("brand").isNull(), "unknown").otherwise(col("brand"))))
+
+# 4. Correct the Data types
+df_products = df_products.select(
+    col("product_id").cast("int"),
+    col("product_name").cast("string"),
+    col("category").cast("string"),
+    col("price").cast("double"),
+    col("discount_percentage").cast("double"),
+    col("products_rating").cast("double"),
+    col("stock").cast("int"),
+    col("brand").cast("string")
+)
+
+# 5. Write to silver layer
+df_products.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.web_api.products")
+------------------------------------------------------------------
+                                    3. users table
+from pyspark.sql.functions import regexp_replace
+
+# 1. Read users data
+df_users = spark.table("bronze_catalog.web_api.users")
+
+# 2. correct column names
+df_users = df_users.selectExpr(
+    "id as customer_id",
+    "firstName as first_name",
+    "lastName as last_name",
+    "age",
+    "gender",
+    "email",
+    "phone"
+)
+
+# 3. add 50 in customer_id column",
+df_users = df_users.withColumn("customer_id", col("customer_id") % 50 + 1)
+
+
+# 4. Remove space, -, + from phone number
+df_users = df_users.withColumn("phone", regexp_replace(col("phone"), r"[ +\-]", ""))
+
+# 4. Correct the Data types
+df_users = df_users.select(
+    col("customer_id").cast("int"),
+    col("first_name").cast("string"),
+    col("last_name").cast("string"),
+    col("age").cast("int"),
+    col("gender").cast("string"),
+    col("email").cast("string"),
+    col("phone").cast("string")
+)
+
+# 5. Write to silver layer
+df_users.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("silver_catalog.web_api.users")
+
