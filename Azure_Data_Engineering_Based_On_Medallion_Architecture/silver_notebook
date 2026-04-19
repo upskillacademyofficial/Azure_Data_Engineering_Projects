@@ -185,7 +185,7 @@ df_campaigns = df_campaigns.withColumn("campaign_duration",
 
 
 # 3. Correct the Data types
-df_products = df_products.select(
+df_campaigns = df_campaigns.select(
     col("campaign_id").cast("int"),
     col("campaign_name").cast("string"),
     col("start_date").cast("date"),
@@ -198,7 +198,7 @@ df_products = df_products.select(
 
 
 # 6. Write to silver layer
-df_products.write.format("delta") \
+df_campaigns.write.format("delta") \
     .mode("overwrite") \
     .saveAsTable("silver_catalog.marketing.campaigns")
 ----------------------------------------------------------------------
