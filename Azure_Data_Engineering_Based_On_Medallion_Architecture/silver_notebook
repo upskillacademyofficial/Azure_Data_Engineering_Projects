@@ -193,7 +193,7 @@ df_campaigns = df_campaigns.select(
     col("budget").cast("double"),
     col("inserted_date").cast("date"),
     col("lastmodified_date").cast("date"),
-    col("campaign_duration").cast("date")
+    col("campaign_duration").cast("int")
 )
 
 
@@ -214,7 +214,7 @@ display(df_promotions)
 df_promotions.printSchema()
 
 # 3. Correct the Data types
-df_products = df_products.select(
+df_promotions = df_promotions.select(
     col("promotion_id").cast("int"),
     col("product_id").cast("int"),
     col("campaign_id").cast("int"),
@@ -227,7 +227,7 @@ df_products = df_products.select(
 
 
 # 6. Write to silver layer
-df_products.write.format("delta") \
+df_promotions.write.format("delta") \
     .mode("overwrite") \
     .saveAsTable("silver_catalog.marketing.promotions")
 ----------------------------------------------------------------
@@ -280,18 +280,19 @@ df_customer_segments.write.format("delta") \
   3. users
 -------------------------------------------------------------------------
                                                   1. carts table
-from pyspark.sql.functions import round
-# 1. Read df_carts data
+from pyspark.sql.functions import col, round
+
+# 1. carts
 df_carts = spark.table("bronze_catalog.web_api.carts")
 
 # 2. correct column names
 df_header = df_carts.selectExpr(
-    "carts_id as carts_id",
-    "carts_total as carts_total",
     "discounted_total as discounted_amount",
     "userId as customer_id",
     "totalProducts as total_products",
-    "totalQuantity as total_quantity"
+    "totalQuantity as total_quantity",
+    "carts_id",
+    "carts_total"
 )
 
 # 3. find avg_price_per_item 
