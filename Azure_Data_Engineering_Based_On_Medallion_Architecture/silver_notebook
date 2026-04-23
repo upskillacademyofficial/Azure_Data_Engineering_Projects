@@ -62,17 +62,14 @@ from pyspark.sql.functions import col, year, month, dayofmonth, quarter
 # 1. read sales_transactions data
 df_sales_transactions = spark.table("bronze_catalog.sales.sales_transactions")
 
-
 df_sales_transactions = df_sales_transactions \
     .withColumn("total_amount",
-                col("quantity") * col("unit_price") - col("discount")) \
-    .withColumn("profit", col("total_amount") * 0.2) \
+                (col("quantity") * col("unit_price")) - col("discount")) \
+    .withColumn("profit", ((col("quantity") * col("unit_price")) - col("discount")) * 0.2) \
     .withColumn("year", year(col("transaction_date"))) \
     .withColumn("month", month(col("transaction_date"))) \
     .withColumn("day", dayofmonth(col("transaction_date"))) \
     .withColumn("quarter", quarter(col("transaction_date")))
-
-
 
 # 3. Correct the Data types
 df_sales_transactions = df_sales_transactions.select(
@@ -94,11 +91,8 @@ df_sales_transactions = df_sales_transactions.select(
     col("quarter").cast("int")
 )
 
-
-#  6. write to delta table
-df_sales_transactions.write.format("delta") \
-    .mode("overwrite") \
-    .saveAsTable("silver_catalog.sales.sales_transactions")
+# 6. write to delta table
+df_sales_transactions.write.mode("overwrite").option("mergeSchema", "true").saveAsTable("silver_catalog.sales.sales_transactions")
 -----------------------------------------------------------------------------------------------
                                                             3. categories table
 from pyspark.sql.functions import col
