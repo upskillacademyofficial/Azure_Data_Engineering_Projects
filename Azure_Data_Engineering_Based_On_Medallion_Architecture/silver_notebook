@@ -85,10 +85,17 @@ df_sales_transactions = df_sales_transactions.select(
     col("discount").cast("double"),
     col("transaction_date").cast("date"),
     col("payment_method").cast("string"),
-    col("last_updated").cast("date")
+    col("last_updated").cast("date"),
+    col("total_amount").cast("double"),
+    col("profit").cast("double"),
+    col("year").cast("int"),
+    col("month").cast("int"),
+    col("day").cast("int"),
+    col("quarter").cast("int")
 )
 
-# # 6. write to delta table
+
+#  6. write to delta table
 df_sales_transactions.write.format("delta") \
     .mode("overwrite") \
     .saveAsTable("silver_catalog.sales.sales_transactions")
