@@ -281,20 +281,21 @@ from pyspark.sql.functions import col, round
 df_carts = spark.table("bronze_catalog.web_api.carts")
 
 # 2. correct column names
-df_header = df_carts.selectExpr(
+df_carts = df_carts.selectExpr(
+    "carts_id",
+    "carts_total",
     "discounted_total as discounted_amount",
     "userId as customer_id",
     "totalProducts as total_products",
-    "totalQuantity as total_quantity",
-    "carts_id",
-    "carts_total"
+    "totalQuantity as total_quantity"
 )
 
+
 # 3. find avg_price_per_item 
-df_discount = df_header.withColumn("avg_price_per_item", round(col("discounted_amount") / col("total_quantity"), 2))
+df_carts = df_carts.withColumn("avg_price_per_item", round(col("discounted_amount") / col("total_quantity"), 2))
 
 # 4. Correct the Data types
-df_carts = df_discount.select(
+df_carts = df_carts.select(
     col("carts_id").cast("int"),
     col("carts_total").cast("double"),
     col("discounted_amount").cast("double"),
