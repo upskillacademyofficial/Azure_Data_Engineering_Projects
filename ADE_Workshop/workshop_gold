@@ -1,0 +1,16 @@
+%md
+#### Create fact and dimension tables
+
+* 3 Dimension Tables
+    * dim_customers
+    * dim_payment
+    * dim_shipment
+
+* 1 Fact Table
+    * fact_orders
+-------------------------------------
+%md
+#### Relationships for Your Diagram
+* dim_customers.CustomerKey  → fact_orders.CustomerKey
+* dim_payments.PaymentID     → fact_orders.PaymentID
+* dim_shipment.ShipmentID    → fact_orders.ShipmentID
