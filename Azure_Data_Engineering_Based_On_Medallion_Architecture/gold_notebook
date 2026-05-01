@@ -361,3 +361,33 @@ discount_impact = fact_sales.groupBy("discount") \
 discount_impact.write.format("delta") \
     .mode("overwrite") \
     .saveAsTable("gold_catalog.business_metrics.discount_impact")
+=====================================================================================================
+# 1. Create dropdown widget in gold_notebook
+dbutils.widgets.dropdown("discount_value", "0", ["0", "5", "10", "15"])
+
+# 2. Get widget value
+discount_value = int(dbutils.widgets.get("discount_value"))
+-----------------------------------------------
+Edit 7th number query in gold_notebook= 7. High Discount Impact on Sales
+
+# 3. Import functions
+from pyspark.sql.functions import sum, col
+
+# 4. Load fact table
+fact_sales = spark.table("gold_catalog.analytics.fact_sales")
+
+# 5. Apply filter using widget
+filtered_df = fact_sales.filter(col("discount") == discount_value)
+
+# 6. Aggregation
+discount_impact = filtered_df.groupBy("discount") \
+    .agg(sum("total_amount").alias("total_sales")) \
+    .orderBy("discount")
+
+# 7. Display (for demo)
+display(discount_impact)
+
+# 8. Write to gold layer
+discount_impact.write.format("delta") \
+    .mode("overwrite") \
+    .saveAsTable("gold_catalog.business_metrics.discount_impact")
