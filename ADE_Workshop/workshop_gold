@@ -29,4 +29,14 @@ dbutils.widgets.dropdown(
     ["UPI", "Credit Card", "Net Banking", "Debit Card"]
 )
 payment_method = dbutils.widgets.get("payment_method")
+-----------------------------------------------------------
+%sql
+CREATE OR REPLACE TABLE retail_catalog.workshop_business_gold.revenew_by_payments AS
+SELECT 
+    PaymentMethod,
+    SUM(PaymentAmount) AS total_revenue
+FROM retail_catalog.workshop_analytics_gold.fact_orders
+WHERE PaymentMethod = :payment_method
+GROUP BY PaymentMethod
+ORDER BY total_revenue DESC;
 =====================================================
