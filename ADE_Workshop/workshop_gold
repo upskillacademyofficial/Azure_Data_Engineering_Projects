@@ -14,3 +14,19 @@
 * dim_customers.CustomerKey  → fact_orders.CustomerKey
 * dim_payments.PaymentID     → fact_orders.PaymentID
 * dim_shipment.ShipmentID    → fact_orders.ShipmentID
+==========================================
+%sql
+use catalog retail_catalog;
+--------------------------------------------
+%sql
+CREATE SCHEMA if not EXISTS workshop_analytics_gold;
+USE SCHEMA workshop_analytics_gold;
+
+=========================================================
+dbutils.widgets.dropdown(
+    "payment_method", 
+    "Debit Card", 
+    ["UPI", "Credit Card", "Net Banking", "Debit Card"]
+)
+payment_method = dbutils.widgets.get("payment_method")
+=====================================================
